@@ -74,6 +74,45 @@ void AviViewer::loop()
   return;
 }
 
+void AviViewer::command(VCMD cmd, const void* arg)
+{
+  if( cmd == CMD_STOP ){
+    // stop video
+    mode = MODE_STOP;
+  }else if( cmd == CMD_TOGGLE_PLAYMODE ){
+    // toggle play mode
+    if( mode == MODE_PLAY ){
+      mode = MODE_STOP;
+    }else{
+      mode = MODE_PLAY;
+    }
+  }else if( cmd == CMD_FORWARD_FRAME ){
+    // step one frame forward
+    if( mode == MODE_PLAY ){
+      mode = MODE_STOP;
+    }
+    setframepos(frame_no+1);
+    showimage();
+  }else if( cmd == CMD_BACKWARD_FRAME ){
+    // step one frame backward
+    if( mode == MODE_PLAY ){
+      mode = MODE_STOP;
+    }
+    setframepos(frame_no-1);
+    showimage();
+  }else if( cmd == CMD_SAVEFRAME ){
+    char* filename = (char*) arg;
+    // save image
+    saveframe(filename);
+  }else if( cmd == CMD_CLEARPAINT ){
+    // clear paint mask
+    paintmask = cv::Mat::zeros( image.size(), CV_8UC3 );
+    showimage();
+  }
+
+  return;
+}
+
 bool AviViewer::keyboard()
 {
   int key = cv::waitKey(30);
@@ -82,33 +121,15 @@ bool AviViewer::keyboard()
     // Quit
     return false;
   }else if( key == 'p' ){
-    // Change Play mode
-    if( mode == MODE_PLAY ){
-      mode = MODE_STOP;
-    }else{
-      mode = MODE_PLAY;
-    }
+    command(CMD_TOGGLE_PLAYMODE);
   }else if( key == 'f' ){
-    // step one frame forward
-    if( mode == MODE_PLAY ){
-      mode = MODE_STOP;
-    }
-    setframepos(frame_no+1);
-    showimage();
+    command(CMD_FORWARD_FRAME);
   }else if( key == 'b' ){
-    // step one frame backward
-    if( mode == MODE_PLAY ){
-      mode = MODE_STOP;
-    }
-    setframepos(frame_no-1);
-    showimage();
+    command(CMD_BACKWARD_FRAME);
   }else if( key == 's' ){
-    // save image
-    saveframe("frame.png");
+    command(CMD_SAVEFRAME,"frame.png");
   }else if( key == 'c' ){
-    // clear paint
-    paintmask = cv::Mat::zeros( image.size(), CV_8UC3 );
-    showimage();
+    command(CMD_CLEARPAINT);
   }
 
   return true;
@@ -196,6 +217,12 @@ void AviViewer::saveframe(const std::string& filename)
     error(ERROR_SAVEFAILED);
     return;
   }
+}
+
+void AviViewer::saveframe(const char* const filename)
+{
+  saveframe(std::string(filename));
+  return;
 }
 
 double AviViewer::gettime()

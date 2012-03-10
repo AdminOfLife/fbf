@@ -14,6 +14,15 @@ typedef enum _VMODE{
   MODE_STOP,
 } VMODE;
 
+typedef enum _VCMD{
+  CMD_STOP,
+  CMD_TOGGLE_PLAYMODE,
+  CMD_FORWARD_FRAME,
+  CMD_BACKWARD_FRAME,
+  CMD_SAVEFRAME,
+  CMD_CLEARPAINT,
+} VCMD;
+
 // trackbar callback
 void onChangeTrackbarAviViewer(int pos, void* userdata);
 // mouse callback
@@ -57,6 +66,9 @@ private:
   bool keyboard();
   // error
   void error(VERROR e);
+  // save
+  void saveframe(const std::string& filename);
+  void saveframe(const char* const filename);
 
 public:
   // Constructor
@@ -76,7 +88,8 @@ public:
   void setframepos(int no);
   // show image to window
   void showimage();
-  void saveframe(const std::string& filename);
+  // use cmd
+  void command(VCMD cmd, const void* arg=NULL);
 
   // draw circle on mask image
   void drawCircleToMask(int x, int y);
