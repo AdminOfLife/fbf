@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include <cv.h>
 #include <highgui.h>
@@ -8,10 +9,11 @@
 AviViewer::AviViewer()
 {
   // initialization
-  this->filename = "";
-  this->frame_no = -1;
-  this->fCount = -1;
-  this->cap = cv::VideoCapture();
+  filename = "";
+  frame_no = -1;
+  fCount = -1;
+  cap = cv::VideoCapture();
+  drawcolor = cv::Scalar(255,0,0);
 }
 
 AviViewer::AviViewer(const std::string& filename)
@@ -40,14 +42,21 @@ void AviViewer::invoke()
   }
 
   // set gui name
-  winname = filename;
-  trackname = "track";
+  winname = "FBF: "+filename;
+  trackname = "FrameNo";
 
   // make window
   cv::namedWindow(winname, CV_WINDOW_AUTOSIZE);
   // make trackbar
   cv::createTrackbar( trackname, winname, NULL, fCount, onChangeTrackbarAviViewer, this);
-  
+  // Mouse callback
+  cvSetMouseCallback( winname.c_str(), onMouseAviViewer, (void*)this);
+
+  // load first image
+  setframepos(0);
+  // make mask image
+  paintmask = cv::Mat::zeros( image.size(), CV_8UC3 );
+
   showimage();
 
   loop();
@@ -56,8 +65,10 @@ void AviViewer::invoke()
 void AviViewer::loop()
 {
   while( keyboard() ){
-    getimg(frame_no+1);
-    showimage();
+    if( mode == MODE_PLAY ){
+      setframepos(frame_no+1);
+      showimage();
+    }
   }
   
   return;
@@ -66,8 +77,38 @@ void AviViewer::loop()
 bool AviViewer::keyboard()
 {
   int key = cv::waitKey(30);
+
   if( key == 'q' ){
+    // Quit
     return false;
+  }else if( key == 'p' ){
+    // Change Play mode
+    if( mode == MODE_PLAY ){
+      mode = MODE_STOP;
+    }else{
+      mode = MODE_PLAY;
+    }
+  }else if( key == 'f' ){
+    // step one frame forward
+    if( mode == MODE_PLAY ){
+      mode = MODE_STOP;
+    }
+    setframepos(frame_no+1);
+    showimage();
+  }else if( key == 'b' ){
+    // step one frame backward
+    if( mode == MODE_PLAY ){
+      mode = MODE_STOP;
+    }
+    setframepos(frame_no-1);
+    showimage();
+  }else if( key == 's' ){
+    // save image
+    saveframe("frame.png");
+  }else if( key == 'c' ){
+    // clear paint
+    paintmask = cv::Mat::zeros( image.size(), CV_8UC3 );
+    showimage();
   }
 
   return true;
@@ -75,7 +116,9 @@ bool AviViewer::keyboard()
 
 void AviViewer::showimage()
 {
-  cv::imshow(winname, image);
+  cv::Mat showimage = image.clone();
+  paintmask.copyTo( showimage, paintmask );
+  cv::imshow(winname, showimage);
   return;
 }
 
@@ -91,9 +134,6 @@ bool AviViewer::load()
   fCount = (int) cap.get(CV_CAP_PROP_FRAME_COUNT);
   fps = (int) cap.get(CV_CAP_PROP_FPS);
 
-  // load first image
-  getimg(0);
-
   return true;
 }
 
@@ -102,6 +142,17 @@ bool AviViewer::load(const std::string& filename)
   this->filename = filename;
   
   return load();
+}
+
+void AviViewer::setframepos(int no)
+{
+  // get image
+  getimg(no);
+  
+  // set trackbar position
+  cv::setTrackbarPos( trackname, winname, frame_no);
+
+  return;
 }
 
 void AviViewer::getimg(int no)
@@ -139,6 +190,14 @@ void AviViewer::setnextframe(int no)
   return;
 }
 
+void AviViewer::saveframe(const std::string& filename)
+{
+  if( !cv::imwrite(filename, image) ){
+    error(ERROR_SAVEFAILED);
+    return;
+  }
+}
+
 double AviViewer::gettime()
 {
   return (double) frame_no / fps;
@@ -146,6 +205,30 @@ double AviViewer::gettime()
 
 void AviViewer::error(VERROR e)
 {
+  switch(e){
+  case ERROR_NOERROR:
+    break;
+
+  case ERROR_CANNOTOPEN:
+    std::cerr << "Can't open :" << filename << std::endl;
+    break;
+
+  case ERROR_NOTOPENED:
+    std::cerr << "Not opened video file" << std::endl;
+    break;
+
+  case ERROR_SAVEFAILED:
+    std::cerr << "Failed to save frame" << std::endl;
+    break;
+  }
+
+  return;
+}
+
+void AviViewer::drawCircleToMask(int x, int y)
+{
+  cv::circle( paintmask, cv::Point(x,y), 2, drawcolor, -1, CV_AA );
+
   return;
 }
 
@@ -153,6 +236,17 @@ void onChangeTrackbarAviViewer(int pos, void* userdata)
 {
   AviViewer *avv = (AviViewer *) userdata;
 
+  avv->setframepos(pos);
+  avv->showimage();
+
   return;
 }
 
+void onMouseAviViewer( int event, int x, int y, int flags, void* param)
+{
+  AviViewer *avv = (AviViewer *) param;
+  if( flags == CV_EVENT_FLAG_LBUTTON ){
+    avv->drawCircleToMask(x,y);
+    avv->showimage();
+  }
+}

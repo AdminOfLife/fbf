@@ -4,11 +4,11 @@
 
 #include "aviviewer.hpp"
 
-int main()
+int main(int argc, char*argv[])
 {
   AviViewer avv;
 
-  avv.load("test.avi");
+  avv.load(argv[1]);
 
   avv.invoke();
 }
