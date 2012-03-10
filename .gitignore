@@ -1,0 +1,11 @@
+*.o
+*~
+\#*\#
+*.avi
+*.png
+test/
+temp/
+debug/
+release/
+
+
