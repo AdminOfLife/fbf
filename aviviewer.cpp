@@ -16,22 +16,26 @@ AviViewer::AviViewer()
   drawcolor = cv::Scalar(255,0,0);
 }
 
-AviViewer::AviViewer(const std::string& filename)
+AviViewer::AviViewer(const std::string& filename,int fps)
 {
   AviViewer();
 
+  if( fps > 0 ){
+    this->fps = fps;
+  }
   this->filename = filename;
   load();
 }
   
-AviViewer::AviViewer(const char* const filename)
+AviViewer::AviViewer(const char* const filename,int fps)
 {
-  AviViewer(std::string(filename));
+  AviViewer(std::string(filename),fps);
 }
 
 AviViewer::~AviViewer()
 {
-  // dummy
+  // destroy window
+  cv::destroyWindow(winname);
 }
 
 void AviViewer::invoke()
@@ -60,6 +64,8 @@ void AviViewer::invoke()
   showimage();
 
   loop();
+
+  return;
 }
 
 void AviViewer::loop()
@@ -137,8 +143,17 @@ bool AviViewer::keyboard()
 
 void AviViewer::showimage()
 {
+  double time = gettime(); 
+  char timetext[256];
+
   cv::Mat showimage = image.clone();
+  // draw paint
   paintmask.copyTo( showimage, paintmask );
+  cv::imshow("debug",paintmask);
+  // time text
+  sprintf( timetext, "%.3lf sec", time );
+  cv::putText( showimage, std::string(timetext), cv::Point(10,30), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0,0,255) );
+
   cv::imshow(winname, showimage);
   return;
 }
@@ -153,7 +168,9 @@ bool AviViewer::load()
 
   // get video information
   fCount = (int) cap.get(CV_CAP_PROP_FRAME_COUNT);
-  fps = (int) cap.get(CV_CAP_PROP_FPS);
+  if( fps <= 0 ){
+    fps = (int) cap.get(CV_CAP_PROP_FPS);
+  }
 
   return true;
 }
@@ -228,6 +245,15 @@ void AviViewer::saveframe(const char* const filename)
 double AviViewer::gettime()
 {
   return (double) frame_no / fps;
+}
+
+void AviViewer::setfps(int fps)
+{
+  if( fps > 0 ){
+    this->fps = fps;
+    showimage();
+  }
+  return;
 }
 
 void AviViewer::error(VERROR e)

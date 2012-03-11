@@ -73,8 +73,8 @@ private:
 public:
   // Constructor
   AviViewer();
-  AviViewer(const std::string& filename);
-  AviViewer(const char* const filename);
+  AviViewer(const std::string& filename, int fps=-1);
+  AviViewer(const char* const filename, int fps=-1);
   // Destructor
   ~AviViewer();
 
@@ -90,6 +90,8 @@ public:
   void showimage();
   // use cmd
   void command(VCMD cmd, const void* arg=NULL);
+  // change fps
+  void setfps(int fps);
 
   // draw circle on mask image
   void drawCircleToMask(int x, int y);
