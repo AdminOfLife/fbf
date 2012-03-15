@@ -12,6 +12,8 @@ AviViewer::AviViewer()
   filename = "";
   frame_no = -1;
   fCount = -1;
+  fps = -1;
+  ready = false;
   cap = cv::VideoCapture();
   drawcolor = cv::Scalar(255,0,0);
 }
@@ -20,11 +22,7 @@ AviViewer::AviViewer(const std::string& filename,int fps)
 {
   AviViewer();
 
-  if( fps > 0 ){
-    this->fps = fps;
-  }
-  this->filename = filename;
-  load();
+  load(filename,fps);
 }
   
 AviViewer::AviViewer(const char* const filename,int fps)
@@ -143,14 +141,19 @@ bool AviViewer::keyboard()
 
 void AviViewer::showimage()
 {
-  double time = gettime(); 
+  double time;
   char timetext[256];
+
+  if( !cap.isOpened() || !ready ){
+    return;
+  }
 
   cv::Mat showimage = image.clone();
   // draw paint
   paintmask.copyTo( showimage, paintmask );
-  cv::imshow("debug",paintmask);
+
   // time text
+  time = gettime(); 
   sprintf( timetext, "%.3lf sec", time );
   cv::putText( showimage, std::string(timetext), cv::Point(10,30), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0,0,255) );
 
@@ -158,7 +161,7 @@ void AviViewer::showimage()
   return;
 }
 
-bool AviViewer::load()
+bool AviViewer::load(int fps)
 {
   // open video file
   if( !cap.open(filename) ){
@@ -168,18 +171,20 @@ bool AviViewer::load()
 
   // get video information
   fCount = (int) cap.get(CV_CAP_PROP_FRAME_COUNT);
-  if( fps <= 0 ){
-    fps = (int) cap.get(CV_CAP_PROP_FPS);
+  if( fps <= 0 && this->fps <= 0 ){
+    this->fps = (int) cap.get(CV_CAP_PROP_FPS);
+  }else if( this->fps <= 0 ){
+    this->fps = fps;
   }
-
+  
   return true;
 }
 
-bool AviViewer::load(const std::string& filename)
+bool AviViewer::load(const std::string& filename,int fps)
 {
   this->filename = filename;
-  
-  return load();
+
+  return load(fps);
 }
 
 void AviViewer::setframepos(int no)
@@ -205,6 +210,11 @@ void AviViewer::getimg(int no)
   
   // get image
   cap >> image;
+
+  // ready to show image
+  if( !ready ){
+    ready = true;
+  }
 
   return;
 }
@@ -285,12 +295,19 @@ void AviViewer::drawCircleToMask(int x, int y)
   return;
 }
 
+int AviViewer::frameno()
+{
+  return frame_no;
+}
+
 void onChangeTrackbarAviViewer(int pos, void* userdata)
 {
   AviViewer *avv = (AviViewer *) userdata;
 
-  avv->setframepos(pos);
-  avv->showimage();
+  if( pos != avv->frameno() ){
+    avv->setframepos(pos);
+    avv->showimage();
+  }
 
   return;
 }

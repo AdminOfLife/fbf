@@ -47,6 +47,7 @@ private:
   // image to show
   cv::Mat image;
   cv::Mat paintmask;
+  bool ready; // whether image is ready.
   
   /// draw color
   cv::Scalar drawcolor;
@@ -79,8 +80,8 @@ public:
   ~AviViewer();
 
   // load video file
-  bool load();
-  bool load(const std::string& filename);
+  bool load(int fps=-1);
+  bool load(const std::string& filename,int fps=-1);
 
   // run viewer
   void invoke();
@@ -92,6 +93,8 @@ public:
   void command(VCMD cmd, const void* arg=NULL);
   // change fps
   void setfps(int fps);
+  // returns current frame
+  int frameno();
 
   // draw circle on mask image
   void drawCircleToMask(int x, int y);
