@@ -20,13 +20,15 @@ int main(int argc, char*argv[])
   int opt;
   std::istringstream fpstext;
 
-  while( (opt = getopt(argc,argv,"f:") ) != -1 ){
+  while( (opt = getopt(argc,argv,"hf:") ) != -1 ){
     switch( opt ){
     case 'f':
       fpstext.str(std::string(optarg));
       fpstext >> fps;
-      std::cerr << "fps=" << fps << std::endl;
       break;
+    case 'h':
+      print_usage();
+      exit(EXIT_SUCCESS);
     default:
       print_usage();
       exit(EXIT_FAILURE);
@@ -39,7 +41,6 @@ int main(int argc, char*argv[])
     exit(EXIT_FAILURE);
   }
 
-  std::cerr << argv[optind] << std::endl;
   avv.load(std::string(argv[optind]),fps);
 
   avv.invoke();
