@@ -48,7 +48,7 @@ void AviViewer::invoke()
   trackname = "FrameNo";
 
   // make window
-  cv::namedWindow(winname, CV_WINDOW_AUTOSIZE);
+  cv::namedWindow(winname, CV_WINDOW_NORMAL);
   // make trackbar
   cv::createTrackbar( trackname, winname, NULL, fCount, onChangeTrackbarAviViewer, this);
   // Mouse callback
