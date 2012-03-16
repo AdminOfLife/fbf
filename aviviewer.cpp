@@ -189,11 +189,20 @@ bool AviViewer::load(const std::string& filename,int fps)
 
 void AviViewer::setframepos(int no)
 {
-  // get image
-  getimg(no);
+  // check if no is out of range
+  if( no < 0 ){
+    no = 0;
+  }else if( no >= fCount ){
+    no = fCount - 1;
+  }
+
+  if( no != frame_no ){
+    // get image
+    getimg(no);
   
-  // set trackbar position
-  cv::setTrackbarPos( trackname, winname, frame_no);
+    // set trackbar position
+    cv::setTrackbarPos( trackname, winname, frame_no);
+  }
 
   return;
 }
@@ -229,9 +238,11 @@ void AviViewer::setnextframe(int no)
   }
 
   // set frame position
-  if( no != (int) cap.get(CV_CAP_PROP_POS_FRAMES) ){
+  if( no !=  (int) cap.get(CV_CAP_PROP_POS_FRAMES) ){
+    std::cerr << no << std::endl;
     cap.set(CV_CAP_PROP_POS_FRAMES,no);
   }
+  std::cerr << "frame_no=" << frame_no << " no=" << no << std::endl;
 
   frame_no = no;
 
