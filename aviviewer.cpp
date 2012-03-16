@@ -50,7 +50,7 @@ void AviViewer::invoke()
   // make window
   cv::namedWindow(winname, CV_WINDOW_NORMAL);
   // make trackbar
-  cv::createTrackbar( trackname, winname, NULL, fCount, onChangeTrackbarAviViewer, this);
+  cv::createTrackbar( trackname, winname, NULL, fCount-1, onChangeTrackbarAviViewer, this);
   // Mouse callback
   cvSetMouseCallback( winname.c_str(), onMouseAviViewer, (void*)this);
 
@@ -239,10 +239,8 @@ void AviViewer::setnextframe(int no)
 
   // set frame position
   if( no !=  (int) cap.get(CV_CAP_PROP_POS_FRAMES) ){
-    std::cerr << no << std::endl;
     cap.set(CV_CAP_PROP_POS_FRAMES,no);
   }
-  std::cerr << "frame_no=" << frame_no << " no=" << no << std::endl;
 
   frame_no = no;
 
@@ -316,6 +314,7 @@ void onChangeTrackbarAviViewer(int pos, void* userdata)
   AviViewer *avv = (AviViewer *) userdata;
 
   if( pos != avv->frameno() ){
+    avv->command(CMD_STOP);
     avv->setframepos(pos);
     avv->showimage();
   }

@@ -41,9 +41,9 @@ int main(int argc, char*argv[])
     exit(EXIT_FAILURE);
   }
 
-  avv.load(std::string(argv[optind]),fps);
-
-  avv.invoke();
+  if( avv.load(std::string(argv[optind]),fps) ){
+    avv.invoke();
+  }
   
   return 0;
 }
