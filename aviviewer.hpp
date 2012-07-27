@@ -25,6 +25,8 @@ typedef enum _VCMD{
 
 // trackbar callback
 void onChangeTrackbarAviViewer(int pos, void* userdata);
+void onChangeTrackbarBrightness(int pos, void* userdata);
+void onChangeTrackbarContrast(int pos, void* userdata);
 // mouse callback
 void onMouseAviViewer(int event, int x, int y, int flag, void* param);
 
@@ -54,6 +56,9 @@ private:
 
   // play mode
   VMODE mode;
+  // brightness and contrast settings
+  int brightness;
+  int contrast;
 
   // set next frame no
   void setnextframe(int no);
@@ -70,6 +75,8 @@ private:
   // save
   void saveframe(const std::string& filename);
   void saveframe(const char* const filename);
+  // change brightness and contrast
+  void changeBrightness( cv::Mat& image );
 
 public:
   // Constructor
@@ -95,6 +102,10 @@ public:
   void setfps(int fps);
   // returns current frame
   int frameno();
+  // set brightness
+  void setbrightness(int brightness);
+  // set contrast
+  void setcontrast(int contrast);
 
   // draw circle on mask image
   void drawCircleToMask(int x, int y);

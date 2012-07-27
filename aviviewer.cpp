@@ -16,6 +16,8 @@ AviViewer::AviViewer()
   ready = false;
   cap = cv::VideoCapture();
   drawcolor = cv::Scalar(255,0,0);
+  brightness = 100;
+  contrast = 100;
 }
 
 AviViewer::AviViewer(const std::string& filename,int fps)
@@ -51,6 +53,10 @@ void AviViewer::invoke()
   cv::namedWindow(winname, CV_WINDOW_NORMAL);
   // make trackbar
   cv::createTrackbar( trackname, winname, NULL, fCount-1, onChangeTrackbarAviViewer, this);
+  cv::createTrackbar( "brightness", winname, NULL, 200, onChangeTrackbarBrightness, this);
+  cv::setTrackbarPos( "brightness", winname, brightness );
+  cv::createTrackbar( "contrast", winname, NULL, 200, onChangeTrackbarContrast, this);
+  cv::setTrackbarPos( "contrast", winname, contrast);
   // Mouse callback
   cvSetMouseCallback( winname.c_str(), onMouseAviViewer, (void*)this);
 
@@ -151,6 +157,9 @@ void AviViewer::showimage()
   cv::Mat showimage = image.clone();
   // draw paint
   paintmask.copyTo( showimage, paintmask );
+
+  // change brightness and contrast
+  changeBrightness( showimage );
 
   // time text
   time = gettime(); 
@@ -309,6 +318,70 @@ int AviViewer::frameno()
   return frame_no;
 }
 
+void AviViewer::changeBrightness(cv::Mat& image)
+{
+  int i;
+  std::vector<cv::Mat> mv;
+  std::vector<cv::Mat>::iterator itr;
+  cv::Mat lut(1, 256, CV_8UC1);
+
+  double contrast = (double) this->contrast - 100.0;
+  double brightness = (double) this->brightness - 100.0;
+  double delta,alpha,beta;
+
+  // split to each channel
+  cv::split(image, mv);
+
+  // algorithm from the opencv sample "demhist"
+  if( contrast > 0 ){
+    delta = 127.0 * contrast / 100.0;
+    alpha = 255.0 / (255.0 - delta * 2);
+    beta = alpha * (brightness - delta);
+  }else{
+    delta = -128.0 * contrast / 100.0;
+    alpha = (256.0 - delta * 2) / 255.0;
+    beta = alpha * brightness + delta;
+  }
+  for( i = 0; i < 256; i++ ){
+    int v = cvRound(alpha * i + beta);
+    if( v < 0 ){
+      v = 0;
+    }else if( v > 255 ){
+      v = 255;
+    }
+    lut.data[i] = v;
+  }
+
+  for( itr = mv.begin(); itr != mv.end(); ++itr ){
+    cv::LUT(*itr, lut, *itr);
+  }
+
+  cv::merge(mv, image);
+}
+
+void AviViewer::setbrightness(int brightness)
+{
+  if( brightness < 0 ){
+    brightness = 0;
+  }else if( brightness > 200 ){
+    brightness = 200;
+  }
+
+  this->brightness = brightness;
+}
+
+void AviViewer::setcontrast(int contrast)
+{
+  if( contrast < 0 ){
+    contrast = 0;
+  }else if( contrast > 200 ){
+    contrast = 200;
+  }
+
+  this->contrast = contrast;
+}
+
+
 void onChangeTrackbarAviViewer(int pos, void* userdata)
 {
   AviViewer *avv = (AviViewer *) userdata;
@@ -330,3 +403,21 @@ void onMouseAviViewer( int event, int x, int y, int flags, void* param)
     avv->showimage();
   }
 }
+
+void onChangeTrackbarBrightness(int pos, void* userdata)
+{
+  AviViewer *avv = (AviViewer *) userdata;
+  
+  avv->setbrightness(pos);
+  avv->showimage();
+}
+
+void onChangeTrackbarContrast(int pos, void* userdata)
+{
+  AviViewer *avv = (AviViewer *) userdata;
+  
+  avv->setcontrast(pos);
+  avv->showimage();
+}
+
+
